@@ -436,8 +436,6 @@ APP.AppView = (function () {
   }
 
   function showItemDetailView(item) {
-    showNotification(item.title, 'Is showing ...');
-
     _itemDetailView.showItem(item);
     showModalCover(true);
   }

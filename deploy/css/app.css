@@ -3110,6 +3110,22 @@ http://codepen.io/HugoGiraudel/pen/qBgoh
   }
 }
 
+.grid__footer {
+  width: 75%;
+  text-align: center;
+  margin: 0 auto;
+  margin-top: 1.376rem;
+}
+.grid__footer p {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 1.376rem;
+  padding-bottom: 0.688rem;
+  text-align: center;
+  color: #968c83;
+  font-family: "Museo Slab", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  text-shadow: 0 1px 0 #fff;
+}
+
 .grid__header {
   position: relative;
   overflow: hidden;
@@ -3793,7 +3809,7 @@ body {
   bottom: 100%;
   top: 0;
   left: 0;
-  background-color: #f4f3f3;
+  background-image: url("../img/light_toast.png");
   overflow-y: scroll;
   overflow-x: hidden;
 }

@@ -2397,17 +2397,19 @@ APP.AppEvents = {
     var _id = 1,
       _possibleYears = ['2010', '2011', '2012', '2013', '2014'],
       _possiblePreviewImages = [
-        'screenshots/screenshot1.png',
-        'screenshots/screenshot2.png',
-        'screenshots/screenshot3.png',
-        'screenshots/screenshot4.png',
-        'screenshots/screenshot5.jpg',
-        'screenshots/screenshot6.jpg',
-        'screenshots/screenshot7.jpg',
-        'screenshots/screenshot8.png',
-        'screenshots/screenshot9.png',
-        'screenshots/screenshot11.png',
-        'screenshots/screenshot12.png'
+        'screenshots/shot1.jpg',
+        'screenshots/shot2.jpg',
+        'screenshots/shot3.jpg',
+        'screenshots/shot4.jpg',
+        'screenshots/shot5.jpg',
+        'screenshots/shot6.jpg',
+        'screenshots/shot7.jpg',
+        'screenshots/shot8.jpg',
+        'screenshots/shot9.jpg',
+        'screenshots/shot10.jpg',
+        'screenshots/shot11.jpg',
+        'screenshots/shot12.jpg',
+        'screenshots/shot13.jpg'
       ],
       _possibleContributors = [],
       _possibleLobs = ['Information Technology', 'Asset Management', 'Human Resources', 'Institutional', 'A&O', 'Client Services', 'Finance', 'Internal Audit', 'Marketing', 'Risk Management'],
@@ -4333,8 +4335,6 @@ APP.AppView = (function () {
   }
 
   function showItemDetailView(item) {
-    showNotification(item.title, 'Is showing ...');
-
     _itemDetailView.showItem(item);
     showModalCover(true);
   }
@@ -4666,10 +4666,12 @@ APP.AppController.AbstractCommand = {
 
 (function () {
 
-  APP.initialize();
+  var _browserInfo = require('nudoru.utils.BrowserInfo');
 
-  if(APP.globals().notSupported) {
-    alert("Your browser is not supported! Please use Firefox, Chrome or Safari.");
+  window.onload = APP.initialize();
+
+  if(_browserInfo.notSupported) {
+    alert("Your browser is not supported! Please use IE 9+, Firefox, Chrome or Safari.");
   }
 
 }());
