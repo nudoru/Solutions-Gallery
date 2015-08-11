@@ -24,7 +24,7 @@
  * 3. set list item field and if field doesn't exist, create it
  */
 
-define('nori/service/SharePoint',
+define('nori/service/SharePointConnector',
   function (require, module, exports) {
 
     var _debug   = true,

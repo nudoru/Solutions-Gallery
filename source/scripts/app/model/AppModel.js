@@ -27,7 +27,8 @@ APP.AppModel = (function () {
     _filterProperties,
     _eventDispatcher = require('nudoru.events.EventDispatcher'),
     _arrayUtils = require('nudoru.utils.ArrayUtils'),
-    _objectUtils = require('nudoru.utils.ObjectUtils');
+    _objectUtils = require('nudoru.utils.ObjectUtils'),
+    _sharePoint = require('nori/service/SharePointConnector');
 
   //----------------------------------------------------------------------------
   //  Accessors
@@ -130,10 +131,10 @@ APP.AppModel = (function () {
   }
 
   function loadModelData() {
-    createTestData();
+    mockData();
   }
 
-  function createTestData() {
+  function mockData() {
     _dataProvider = require('APP.AppModel.DummyData');
     _dataProvider.initialize();
 
