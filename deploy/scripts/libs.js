@@ -2083,6 +2083,1291 @@ define('nudoru.components.BasicMenuItemView',
   });
 
 
+define('nori/model/Map',
+  function (require, module, exports) {
+
+    var _id,
+        _parentCollection,
+        _dirty     = false,
+        _entries   = [],
+        _map       = Object.create(null),
+        _silent    = false;
+
+    //----------------------------------------------------------------------------
+    //  Initialization
+    //----------------------------------------------------------------------------
+
+    function initialize(initObj) {
+      if (!initObj.id) {
+        throw new Error('Model must be init\'d with an id');
+      }
+
+      _id = initObj.id;
+
+      _silent = initObj.silent || false;
+
+      if (initObj.store) {
+        _dirty = true;
+        _map   = initObj.store;
+      } else if (initObj.json) {
+        setJSON(initObj.json);
+      }
+
+    }
+
+    /**
+     * Set map store from a JSON object
+     * @param jstr
+     */
+    function setJSON(jstr) {
+      _dirty = true;
+      try {
+        _map = JSON.parse(jstr);
+      } catch (e) {
+        throw new Error('MapCollection, error parsing JSON:', jstr, e);
+      }
+    }
+
+    function getID() {
+      return _id;
+    }
+
+    function clear() {
+      _map   = {};
+      _dirty = true;
+    }
+
+    function isDirty() {
+      return _dirty;
+    }
+
+    function markClean() {
+      _dirty = false;
+    }
+
+    /**
+     * Set property or merge in new data
+     * @param key String = name of property to set, Object = will merge new props
+     * @param options String = value of property to set, Object = options: silent
+     */
+    function set(key, options) {
+      var silentSet = false;
+
+      if (typeof key === 'object') {
+        if (options !== null && typeof options === 'object') {
+          silentSet = options.silent || false;
+        }
+        _map = _.merge({}, _map, key);
+      } else {
+        _map[key] = options;
+      }
+
+      // Mark changed
+      _dirty = true;
+
+      if (!silentSet) {
+        dispatchChange('set_key');
+      }
+    }
+
+    /**
+     * Assuming that _map[key] is an object, this will set a property on it
+     * @param key
+     * @param prop
+     * @param data
+     */
+    function setKeyProp(key, prop, data, silent) {
+      _map[key][prop] = data;
+
+      _dirty = true;
+      dispatchChange('set_key');
+    }
+
+    /**
+     * Returns a copy of the data
+     * @returns *
+     */
+    function get(key) {
+      var value = has(key) ? _map[key] : undefined;
+
+      if (value) {
+        value = _.cloneDeep(value);
+      }
+
+      return value;
+    }
+
+    /**
+     * Assuming that _map[key] is an object, this will get value
+     * @param key
+     * @param prop
+     * @returns {*}
+     */
+    function getKeyProp(key, prop) {
+      var valueObj = has(key) ? _map[key] : undefined,
+          value    = null;
+
+      if (valueObj) {
+        value = _.cloneDeep(valueObj[prop]);
+      }
+
+      return value;
+    }
+
+    /**
+     * Returns true of the key is present in the map
+     * @param key
+     * @returns {boolean}
+     */
+    function has(key) {
+      return _map.hasOwnProperty(key);
+    }
+
+    /**
+     * Returns an array of the key/values. Results are cached and only regenerated
+     * if changed (set)
+     * @returns {Array}
+     */
+    function entries() {
+      if (!_dirty && _entries) {
+        return _entries;
+      }
+
+      var arry = [];
+      for (var key in _map) {
+        arry.push({key: key, value: _map[key]});
+      }
+
+      _entries = arry;
+      _dirty   = false;
+
+      return arry;
+    }
+
+    /**
+     * Number of entries
+     * @returns {Number}
+     */
+    function size() {
+      return keys().length;
+    }
+
+    /**
+     * Returns an array of all keys in the map
+     * @returns {Array}
+     */
+    function keys() {
+      return Object.keys(_map);
+    }
+
+    /**
+     * Returns an array of all vaules in the map
+     * @returns {Array}
+     */
+    function values() {
+      return entries().map(function (entry) {
+        return entry.value;
+      });
+    }
+
+    /**
+     * Remove a value
+     * @param key
+     */
+    function remove(key) {
+      delete _map[key];
+    }
+
+    /**
+     * Returns matches to the predicate function
+     * @param predicate
+     * @returns {Array.<T>}
+     */
+    function filterValues(predicate) {
+      return values().filter(predicate);
+    }
+
+    function getFirst() {
+      return entries()[0];
+    }
+
+    function getLast() {
+      var e = entries();
+      return e[e.length - 1];
+    }
+
+    function getAtIndex(i) {
+      return entries()[i];
+    }
+
+    /**
+     * Returns a copy of the data map
+     * @returns {void|*}
+     */
+    function toObject() {
+      return _.merge({}, _map);
+    }
+
+    /**
+     * Return a new object by "translating" the properties of the map from one key to another
+     * @param tObj {currentProp, newProp}
+     */
+    function transform(tObj) {
+      var transformed = Object.create(null);
+
+      for (var prop in tObj) {
+        if (_map.hasOwnProperty(prop)) {
+          transformed[tObj[prop]] = _map[prop];
+        }
+      }
+
+      return transformed;
+    }
+
+    /**
+     * On change, emit event globally
+     */
+    function dispatchChange(type) {
+      type = type || 'map';
+
+      if (!_silent) {
+        //_appEvents.modelChanged({
+        //  id     : _id,
+        //  mapType: 'model'
+        //});
+      }
+
+      if (_parentCollection.dispatchChange) {
+        _parentCollection.dispatchChange({
+          id: _id
+        }, type);
+      }
+
+    }
+
+    function toJSON() {
+      return JSON.stringify(_map);
+    }
+
+    function setParentCollection(collection) {
+      _parentCollection = collection;
+    }
+
+    function getParentCollection() {
+      return _parentCollection;
+    }
+
+    //----------------------------------------------------------------------------
+    //  API
+    //----------------------------------------------------------------------------
+
+    module.exports.initialize          = initialize;
+    module.exports.getID               = getID;
+    module.exports.clear               = clear;
+    module.exports.isDirty             = isDirty;
+    module.exports.markClean           = markClean;
+    module.exports.setJSON             = setJSON;
+    module.exports.set                 = set;
+    module.exports.setKeyProp          = setKeyProp;
+    module.exports.get                 = get;
+    module.exports.getKeyProp          = getKeyProp;
+    module.exports.has                 = has;
+    module.exports.remove              = remove;
+    module.exports.keys                = keys;
+    module.exports.values              = values;
+    module.exports.entries             = entries;
+    module.exports.filterValues        = filterValues;
+    module.exports.size                = size;
+    module.exports.getFirst            = getFirst;
+    module.exports.getLast             = getLast;
+    module.exports.getAtIndex          = getAtIndex;
+    module.exports.toObject            = toObject;
+    module.exports.transform           = transform;
+    module.exports.toJSON              = toJSON;
+    module.exports.setParentCollection = setParentCollection;
+    module.exports.getParentCollection = getParentCollection;
+
+  });
+
+define('nori/model/MapCollection',
+  function (require, module, exports) {
+
+    var _this,
+        _id,
+        _parentCollection,
+        _children  = [],
+        _silent    = false;
+
+    //----------------------------------------------------------------------------
+    //  Initialization
+    //----------------------------------------------------------------------------
+
+    function initialize(initObj) {
+      if (!initObj.id) {
+        throw new Error('ModelCollection must be init\'d with an id');
+      }
+
+      _this   = this;
+      _id     = initObj.id;
+      _silent = initObj.silent || false;
+
+      // TODO test
+      if (initObj.models) {
+        addMapsFromArray.call(_this, initObj.models);
+      }
+    }
+
+    function isDirty() {
+      var dirty = false;
+      forEach(function checkDirty(map) {
+        if (map.isDirty()) {
+          dirty = true;
+        }
+      });
+      return dirty;
+    }
+
+    function markClean() {
+      forEach(function checkDirty(map) {
+        map.markClean();
+      });
+    }
+
+    /**
+     * Add an array of Model instances
+     * @param sArry
+     */
+    function addMapsFromArray(sArry) {
+      sArry.forEach(function (store) {
+        add(store);
+      });
+    }
+
+    /**
+     * Create an add child Model stores from an array of objects
+     * @param array Array of objects
+     * @param idKey Key on each object to use for the ID of that Model store
+     */
+    function addFromObjArray(oArry, idKey, silent) {
+      oArry.forEach(function (obj) {
+
+        var id;
+
+        if (obj.hasOwnProperty(idKey)) {
+          id = obj[idKey];
+        } else {
+          id = _id + 'child' + _children.length;
+        }
+
+        add(Nori.model().createMap({id: id, silent: silent, store: obj}));
+      });
+      dispatchChange(_id, 'add_map');
+    }
+
+
+    function addFromJSONArray(json, idKey, silent) {
+      json.forEach(function (jstr) {
+
+        var id, obj;
+
+        try {
+          obj = JSON.parse(jstr);
+        } catch (e) {
+          throw new Error('MapCollection, error parsing JSON:', jstr, e);
+        }
+
+        if (obj.hasOwnProperty(idKey)) {
+          id = obj[idKey];
+        } else {
+          id = _id + 'child' + _children.length;
+        }
+
+        add(Nori.model().createMap({id: id, silent: silent, store: obj}));
+      });
+      dispatchChange(_id, 'add_map');
+    }
+
+    function getID() {
+      return _id;
+    }
+
+    function add(store) {
+      var currIdx = getMapIndex(store.getID());
+
+      store.setParentCollection(_this);
+
+      if (currIdx >= 0) {
+        _children[currIdx] = store;
+      } else {
+        _children.push(store);
+      }
+
+      dispatchChange(_id, 'add_map');
+    }
+
+    /**
+     * Remove a store from the collection
+     * @param storeID
+     */
+    function remove(storeID) {
+      var currIdx = getMapIndex(storeID);
+      if (currIdx >= 0) {
+        _children[currIdx].setParentCollection(null);
+        _children[currIdx] = null;
+        _children.splice(currIdx, 1);
+        dispatchChange(_id, 'remove_map');
+      } else {
+        console.log(_id + ' remove, model not in collection: ' + storeID);
+      }
+    }
+
+    /**
+     * Remove all stores from the array
+     */
+    function removeAll() {
+      _children.forEach(function (map) {
+        map.setParentCollection(null);
+      });
+
+      _children = [];
+      dispatchChange(_id, 'remove_map');
+    }
+
+    /**
+     * Gets the Model by ID
+     * @param storeID
+     * @returns {T}
+     */
+    function getMap(storeID) {
+      return _children.filter(function (store) {
+        return store.getID() === storeID;
+      })[0];
+    }
+
+    /**
+     * Get the index in _children array by Model's ID
+     * @param storeID
+     * @returns {number}
+     */
+    function getMapIndex(storeID) {
+      return _children.map(function (store) {
+        return store.getID();
+      }).indexOf(storeID);
+    }
+
+    /**
+     * On change, emit event globally
+     */
+    function dispatchChange(data, type) {
+      if (!_silent) {
+        type = type || '';
+        //_appEvents.modelChanged({
+        //  id     : _id,
+        //  type   : type,
+        //  mapType: 'collection',
+        //  mapID  : data.id
+        //});
+      }
+
+      if(_parentCollection) {
+        _parentCollection.dispatchChange({id:_id, store:getMap()});
+      }
+    }
+
+    function hasMap(storeID) {
+      return _children[storeID];
+    }
+
+    /**
+     * Number of entries
+     * @returns {Number}
+     */
+    function size() {
+      return _children.length;
+    }
+
+    function getFirst() {
+      return _children[0];
+    }
+
+    function getLast() {
+      return _children[_children.length - 1];
+    }
+
+    function getAtIndex(i) {
+      return _children[i];
+    }
+
+    /**
+     * Runs a predidate on each child map
+     * @param predicate
+     * @returns {Array.<T>}
+     */
+    function filter(predicate) {
+      return _children.filter(predicate);
+    }
+
+    /**
+     * Returns maps where the filter matches the prop / value pair
+     * @param key
+     * @param value
+     * @returns {Array.<T>}
+     */
+    function filterByKey(key, value) {
+      return _children.filter(function (map) {
+        return map.get(key) === value;
+      });
+    }
+
+    function forEach(func) {
+      return _children.forEach(func);
+    }
+
+    function map(func) {
+      return _children.map(func);
+    }
+
+    /**
+     * Return an array of entries of each map
+     * @returns {Array}
+     */
+    function entries() {
+      var arry = [];
+      _children.forEach(function (map) {
+        arry.push(map.entries());
+      });
+      return arry;
+    }
+
+    function toJSON() {
+      return JSON.stringify(_children);
+    }
+
+    function setParentCollection(collection) {
+      _parentCollection = collection;
+    }
+
+    function getParentCollection() {
+      return _parentCollection;
+    }
+
+    //----------------------------------------------------------------------------
+    //  API
+    //----------------------------------------------------------------------------
+
+    module.exports.initialize          = initialize;
+    module.exports.getID               = getID;
+    module.exports.isDirty             = isDirty;
+    module.exports.markClean           = markClean;
+    module.exports.add                 = add;
+    module.exports.addMapsFromArray    = addMapsFromArray;
+    module.exports.addFromObjArray     = addFromObjArray;
+    module.exports.addFromJSONArray    = addFromJSONArray;
+    module.exports.remove              = remove;
+    module.exports.removeAll           = removeAll;
+    module.exports.getMap              = getMap;
+    module.exports.hasMap              = hasMap;
+    module.exports.size                = size;
+    module.exports.getFirst            = getFirst;
+    module.exports.getLast             = getLast;
+    module.exports.getAtIndex          = getAtIndex;
+    module.exports.filter              = filter;
+    module.exports.filterByKey         = filterByKey;
+    module.exports.forEach             = forEach;
+    module.exports.map                 = map;
+    module.exports.entries             = entries;
+    module.exports.toJSON              = toJSON;
+    module.exports.dispatchChange      = dispatchChange;
+    module.exports.setParentCollection = setParentCollection;
+    module.exports.getParentCollection = getParentCollection;
+
+  });
+
+define('nori/service/SharePointConnector',
+  function (require, module, exports) {
+
+    var _debug   = true,
+        _context = require('nori/service/SharePoint/ContextFacade'),
+        _list    = require('nori/service/SharePoint/ListFacade'),
+        _user    = require('nori/service/SharePoint/UserInfoFacade');
+
+    /**
+     * Connect to the SP site
+     *
+     _spSite.connect({}).then(function (value) {
+        console.log('connect', value);
+      }, handleSPError);
+     *
+     * @param initObj
+     * @param cb
+     */
+    module.exports.connect = function (initObj) {
+      if (_debug) console.log('SharePoint > connect');
+      return _context.connect(initObj);
+    };
+
+    /**
+     * First gets the current user and then queries for more details on the
+     * current user
+     *
+     _spSite.getCurrentUser().then(function (value) {
+        console.log('getCurrentUser', value);
+        return value.userName; // Pass it to the next then()
+      }, handleSPError).then(function (value) {
+        _spSite.getUserDetails(value).then(function (value) {
+          console.log('getUserDetails', value);
+        })
+      }, handleSPError);
+     *
+     * @param cb
+     */
+    module.exports.getCurrentUser = function () {
+      if (_debug) console.log('SharePoint > getcurrentuser');
+      return _user.getCurrentUser({});
+    };
+
+    /**
+     * Get extended details on a user
+     * @param userName
+     * @returns {*}
+     */
+    module.exports.getUserDetails = function (userName) {
+      if (_debug) console.log('SharePoint > getuserdetails');
+      return _user.getUserDetails(userName);
+    };
+
+    /**
+     * Gets an array of the list's fields
+     *
+     _spSite.getListFieldNames({
+        listTitle: 'TestList'
+      }).then(function (value) {
+        console.log('getListFieldNames', value);
+      }, handleSPError);
+     *
+     * @param initObj
+     * @returns {*}
+     */
+    module.exports.getListFieldNames = function (initObj) {
+      if (_debug) console.log('SharePoint > GetListFieldNames', initObj);
+      return _list.getFieldNames(initObj);
+    };
+
+    /**
+     * Get an array of objects with key(fields) values
+     *
+     _spSite.getListFields({
+        listTitle: 'TestList',
+        fields   : ['Title', 'ProjectName', 'ProjectID', 'Resource']
+      }).then(function (value) {
+        console.log('getListFields', value);
+      }, handleSPError);
+     *
+     * @param initObj
+     * @returns {*}
+     */
+    module.exports.getListFields = function (initObj) {
+      if (_debug) console.log('SharePoint > GetListFields', initObj);
+      return _list.getFields(initObj);
+    };
+
+    /**
+     * Update a list item's values for the fields
+     *
+     _spSite.updateListFields({
+        listTitle: 'TestList',
+        rowID    : 3,
+        fields   : ['Title', 'ProjectName', 'ProjectID'],
+        values   : ['zzzNew Title', 'zzzNew ProjectName', 'zzzNew ProjectID']
+      }).then(function (value) {
+        console.log('updateListFields', value);
+      }, handleSPError);
+     *
+     * @param initObj
+     * @returns {*}
+     */
+    module.exports.updateListFields = function (initObj) {
+      if (_debug) console.log('SharePoint > UpdateListFields', initObj);
+      return _list.updateFields(initObj);
+    };
+
+    /**
+     * Add a new row to a list
+     *
+     _spSite.createListRow({
+          listTitle: 'TestList',
+          fields   : ['Title', 'ProjectName', 'ProjectID'],
+          values   : ['Nother New Title', 'Nother New ProjectName', 'Nother New ProjectID']
+        }).then(function (value) {
+          console.log('createListRow', value);
+      }, handleSPError);
+     *
+     * @param initObj
+     * @returns {*}
+     */
+    module.exports.createListRow = function (initObj) {
+      if (_debug) console.log('SharePoint > CreateListItem', initObj);
+      return _list.createRow(initObj);
+    };
+
+    /**
+     * Delete a row from the list
+     *
+     _spSite.deleteListRow({
+        listTitle: 'TestList',
+        rowID    : 5
+      }).then(function (value) {
+        console.log('deleteListRow', value);
+      }, handleSPError);
+     *
+     * @param initObj
+     * @returns {*}
+     */
+    module.exports.deleteListRow = function (initObj) {
+      if (_debug) console.log('SharePoint > DeleteListItem', initObj);
+      return _list.deleteRow(initObj);
+    };
+
+    /**
+     * Add a field to a list. Refer to this page on field types
+     * https://msdn.microsoft.com/en-us/library/office/aa979575.aspx
+     *
+     _spSite.addListField({
+        listTitle: 'TestList',
+        field    : {'w2015_Week': 'Note'}
+      }).then(function success(value) {
+        console.log('addListField', value);
+      }, handleSPError);
+     *
+     * @param initObj
+     * @returns {*}
+     */
+    module.exports.addListField = function (initObj) {
+      if (_debug) console.log('SharePoint > AddListField', initObj);
+      return _list.createField(initObj);
+    };
+
+
+  });
+
+
+/*******************************************************************************
+ * Module to connect to a SharePoint site and get properties
+ * 2010 reference https://msdn.microsoft.com/en-us/library/ff408569(v=office.14).aspx
+ ******************************************************************************/
+
+define('nori/service/SharePoint/ContextFacade',
+  function (require, module, exports) {
+
+    var _spSiteURL,
+        _spTargetVersion,
+        _spSiteContext,
+        _spSiteWeb,
+        _spUtils = require('nori/service/SharePoint/Utils');
+
+    function connect(initObj) {
+      _spSiteURL       = initObj.site;
+      _spTargetVersion = initObj.version;
+
+      if (_spSiteURL) {
+        _spSiteContext = new SP.ClientContext(_spSiteURL);
+      } else {
+        _spSiteContext = new SP.ClientContext.get_current();
+      }
+
+      _spSiteWeb = _spSiteContext.get_web();
+      _spSiteContext.load(_spSiteWeb);
+      return _spUtils.executeQuery(_spSiteContext,
+        function parser() {
+          // Props https://msdn.microsoft.com/en-us/library/ee549149(v=office.14).aspx
+          return {
+            title            : _spSiteWeb.get_title(),
+            id               : _spSiteWeb.get_id(),
+            uiVersion        : _spSiteWeb.get_uiVersion(),
+            description      : _spSiteWeb.get_description(),
+            created          : _spSiteWeb.get_created(),
+            serverRelativeUrl: _spSiteWeb.get_serverRelativeUrl()
+          };
+        });
+    }
+
+    module.exports.connect    = connect;
+    module.exports.getContext = function () {
+      return _spSiteContext
+    };
+    module.exports.getWebSite = function () {
+      return _spSiteWeb
+    };
+
+  });
+
+/*******************************************************************************
+ * Module to connect to a SharePoint list view and get items
+ *
+ * Lots of great documentation on MSDN here
+ * https://msdn.microsoft.com/library/jj163201.aspx#BasicOps_SPWebTasks
+ ******************************************************************************/
+
+define('nori/service/SharePoint/ListFacade',
+  function (require, module, exports) {
+
+    var _spUtils = require('nori/service/SharePoint/Utils');
+
+    /**
+     * Gets the site context and the list object by name
+     * @param title
+     * @returns {{context: *, list: *}}
+     */
+    function getListContext(title, url) {
+      var ctx, list;
+      ctx  = url ? SP.ClientContext(url) : SP.ClientContext.get_current();
+      list = ctx.get_web().get_lists().getByTitle(title);
+      return {context: ctx, list: list};
+    }
+
+
+    /**
+     * Creates the include string to fetch the specified fields from the list rows
+     * @param fields
+     * @returns {string}
+     */
+    function getFieldsIncludeString(fields) {
+      var encodedFields = _spUtils.encodeFieldNames(fields).join(',');
+      return 'Include(Id,' + encodedFields + ')';
+    }
+
+
+    /**
+     * Gets an array of the list's fields from the All Items view
+     * @param initObj
+     * @param successCB
+     * @param errorCB
+     */
+    function getFieldNames(initObj) {
+      var listProps, view, viewFields;
+
+      listProps  = getListContext(initObj.listTitle, initObj.siteUrl);
+      view       = listProps.list.get_views().getByTitle('All Items');
+      viewFields = view.get_viewFields();
+
+      listProps.context.load(viewFields);
+
+      return _spUtils.executeQuery(listProps.context,
+        function parser() {
+          var enumerator = viewFields.getEnumerator(),
+              fields     = [];
+
+          while (enumerator.moveNext()) {
+            fields.push(enumerator.get_current())
+          }
+          return fields;
+        });
+    }
+
+    /**
+     * Gets rows and fields from a SharePoint List
+     * @param initObj
+     * @param successCB
+     * @param errorCB
+     */
+    function getFields(initObj) {
+      var listProps, rowsCollection;
+
+      listProps      = getListContext(initObj.listTitle, initObj.siteUrl);
+      rowsCollection = listProps.list.getItems(SP.CamlQuery.createAllItemsQuery());
+
+      listProps.context.load(rowsCollection, getFieldsIncludeString(initObj.fields));
+
+      return _spUtils.executeQuery(listProps.context,
+        function parser() {
+          var fields, currentRow, enumerator, rowsArray;
+
+          enumerator = rowsCollection.getEnumerator();
+          rowsArray  = [];
+
+          while (enumerator.moveNext()) {
+            currentRow = enumerator.get_current();
+
+            // Only capture the specific rowID or all rows
+            if (!initObj.rowID || initObj.rowID === currentRow.get_id()) {
+              fields         = Object.create(null);
+              fields['SPID'] = currentRow.get_id(); // grab the internal row ID
+
+              _spUtils.encodeFieldNames(initObj.fields).forEach(function (col, idx) {
+                fields[initObj.fields[idx]] = currentRow.get_item(col);
+              });
+
+              rowsArray.push(fields);
+            }
+          }
+
+          return rowsArray;
+        });
+    }
+
+    /**
+     * Update a row's fields
+     * @param initObj
+     * @param successCB
+     * @param errorCB
+     */
+    function updateFields(initObj) {
+      var listProps, rowItem;
+
+      listProps = getListContext(initObj.listTitle, initObj.siteUrl);
+      rowItem   = listProps.list.getItemById(initObj.rowID);
+
+      _spUtils.encodeFieldNames(initObj.fields).forEach(function (field, i) {
+        rowItem.set_item(field, initObj.values[i]);
+      });
+
+      rowItem.update();
+
+      return _spUtils.executeQuery(listProps.context,
+        function parser() {
+          return true;
+        });
+    }
+
+    /**
+     * Creates a new list row
+     * @param initObj
+     * @param successCB
+     * @param errorCB
+     */
+    function createRow(initObj) {
+      var listProps, rowItem;
+
+      listProps = getListContext(initObj.listTitle, initObj.siteUrl);
+      rowItem   = listProps.list.addItem(new SP.ListItemCreationInformation());
+
+      _spUtils.encodeFieldNames(initObj.fields).forEach(function (field, i) {
+        rowItem.set_item(field, initObj.values[i]);
+      });
+
+      rowItem.update();
+      listProps.context.load(rowItem);
+
+      return _spUtils.executeQuery(listProps.context,
+        function parser() {
+          return rowItem.get_id();
+        });
+
+    }
+
+    /**
+     * Deletes a list row
+     * @param initObj
+     * @param successCB
+     * @param errorCB
+     */
+    function deleteRow(initObj) {
+      var listProps, rowItem;
+
+      listProps = getListContext(initObj.listTitle, initObj.siteUrl);
+      rowItem   = listProps.list.getItemById(initObj.rowID);
+      rowItem.deleteObject();
+
+      return _spUtils.executeQuery(listProps.context,
+        function parser() {
+          return true;
+        });
+
+    }
+
+    /**
+     * Adds a new field to the SP list
+     * Field properties reference: https://msdn.microsoft.com/en-us/library/office/aa979575.aspx
+     * XML Referenece: https://karinebosch.wordpress.com/my-articles/creating-fields-using-csom/
+     * @param initObj
+     * @param successCB
+     * @param errorCB
+     */
+    function createField(initObj) {
+      var listProps, field, fieldName, fieldType;
+
+      fieldName = Object.keys(initObj.field)[0];
+      fieldType = initObj.field[fieldName];
+
+      // If the field start with a number, SP will encode the char resulting in an unexpected internal field name
+      if (!_spUtils.isLetter(fieldName.charAt(0))) {
+        throw new Error('Field name, ' + fieldName + ', must begin with a letter or encoding will occur.');
+      }
+
+      listProps = getListContext(initObj.listTitle, initObj.siteUrl);
+      field     = listProps.list.get_fields().addFieldAsXml(
+        '<Field Name="' + fieldName + '" DisplayName="' + fieldName + '" Type="' + fieldType + '" />',
+        true,
+        SP.AddFieldOptions.defaultValue
+      );
+
+      listProps.context.load(field);
+
+      return _spUtils.executeQuery(listProps.context,
+        function parser() {
+          return field.get_internalName();
+        });
+    }
+
+    module.exports.getFieldNames = getFieldNames;
+    module.exports.getFields     = getFields;
+    module.exports.updateFields  = updateFields;
+    module.exports.createField   = createField;
+    module.exports.createRow     = createRow;
+    module.exports.deleteRow     = deleteRow;
+
+  });
+
+/*******************************************************************************
+ * Module to get user information
+ * http://sharepoint.stackexchange.com/questions/31457/get-user-via-javascript-client-object-model
+ ******************************************************************************/
+
+define('nori/service/SharePoint/UserInfoFacade',
+  function (require, module, exports) {
+
+    var _spSiteContext,
+        _spSiteWeb,
+        _spUtils = require('nori/service/SharePoint/Utils');
+
+    function getCurrentUser(initObj) {
+      _spSiteContext = initObj.context || new SP.ClientContext.get_current();
+      _spSiteWeb     = _spSiteContext.get_web();
+
+      var currentUser = _spSiteWeb.get_currentUser();
+      currentUser.retrieve();
+
+      _spSiteContext.load(_spSiteWeb);
+
+      return _spUtils.executeQuery(_spSiteContext,
+        function parser() {
+          var userObject = _spSiteWeb.get_currentUser();
+          return {
+            userID  : userObject.get_id(),
+            userName: userObject.get_title(),
+            login   : userObject.get_loginName(),
+            email   : userObject.get_email()
+          };
+        });
+    }
+
+    function getUserDetails(userName) {
+      _spSiteContext = _spSiteContext || new SP.ClientContext.get_current();
+      _spSiteWeb     = _spSiteContext.get_web();
+
+      var userInfoList = _spSiteWeb.get_siteUserInfoList(),
+          camlQuery    = new SP.CamlQuery();
+
+      camlQuery.set_viewXml("<View><Query><Where><Eq><FieldRef Name=\'Title\'/><Value Type=\'Text\'>" + userName + "</Value></Eq></Where></Query><RowLimit>1</RowLimit></View>");
+
+      var colListItem = userInfoList.getItems(camlQuery);
+      _spSiteContext.load(colListItem);
+
+      return _spUtils.executeQuery(_spSiteContext,
+        function parser() {
+          var userObject = colListItem.itemAt(0);
+          return {
+            name       : userObject.get_fieldValues().Name,
+            userName   : userObject.get_fieldValues().UserName,
+            email      : userObject.get_fieldValues().Email,
+            firstName  : userObject.get_fieldValues().FirstName,
+            jobTitle   : userObject.get_fieldValues().JobTitle,
+            mobilePhone: userObject.get_fieldValues().MobilePhone,
+            workPhone  : userObject.get_fieldValues().WorkPhone,
+            notes      : userObject.get_fieldValues().Notes,
+            picture    : userObject.get_fieldValues().Picture,
+            sipAddress : userObject.get_fieldValues().SipAddress,
+            title      : userObject.get_fieldValues().Title,
+            department : userObject.get_fieldValues().Department,
+            webSite    : userObject.get_fieldValues().WebSite,
+            timeZone   : userObject.get_fieldValues().TimeZone
+          };
+        });
+    }
+
+    module.exports.getCurrentUser = getCurrentUser;
+    module.exports.getUserDetails = getUserDetails;
+
+  });
+
+/*******************************************************************************
+ * Helpful utils for SP
+ ******************************************************************************/
+
+define('nori/service/SharePoint/Utils',
+  function (require, module, exports) {
+
+    var SP2010 = 'sp2010',
+        SP2013 = 'sp2013';
+
+    /**
+     * Utility to encode a string to a valid SP field name
+     * Encode/decode form - http://www.n8d.at/blog/encode-and-decode-field-names-from-display-name-to-internal-name/
+     * @param toEncode
+     * @returns {string}
+     */
+    function encodeToSPFieldName(version, toEncode) {
+
+      // Default to 2013 encodings
+      version = version || SP2013;
+
+      var charToEncode  = toEncode.split(''),
+          encodedString = '',
+          maxLen        = (version === SP2010 ? 32 : 255),
+          i             = 0,
+          len           = charToEncode.length;
+
+      for (; i < len; i++) {
+        encodedChar = encodeURIComponent(charToEncode[i]);
+        if (encodedChar.length == 3) {
+          encodedString += encodedChar.replace("%", "_x00") + "_";
+        }
+        else if (encodedChar.length == 5) {
+          encodedString += encodedChar.replace("%u", "_x") + "_";
+        }
+        else {
+          encodedString += encodedChar;
+        }
+      }
+
+      return encodedString.substr(0, maxLen);
+    }
+
+    /**
+     * Utility to decode a SP field name
+     * @param toDecode
+     * @returns {string}
+     */
+    function decodeSPFieldName(toDecode) {
+      var decodedString = toDecode.replace("_x", "%u").replace("_", "");
+      return decodeURIComponent(decodedString);
+    }
+
+    /**
+     * Encodes the field names to proper SP syntax. Defaults to 2013
+     * @param fields
+     * @returns {Array|*}
+     */
+    function encodeFieldNames(fields) {
+      return fields.map(function encodeFields(field) {
+        // version defaults to Sp 2013
+        return encodeToSPFieldName('', field);
+      });
+    }
+
+    /**
+     * True if character is a letter
+     * @param str
+     * @returns {boolean|Array|{index: number, input: string}|*}
+     */
+    function isLetter(str) {
+      return str.length === 1 && str.match(/[a-z]/i);
+    }
+
+    /**
+     * Create a promise object for the operation
+     * @param context SharePoint context object
+     * @param parser Processes the result of the query and returns the results
+     */
+    function executeQuery(context, parser) {
+      return new Promise(function (resolve, reject) {
+        context.executeQueryAsync(
+          function success(sender, args) {
+            resolve(parser());
+          },
+          function error(sender, args) {
+            reject('context.executeQueryAsync Error ' + args.get_message() + ', ' + args.get_stackTrace());
+          });
+      });
+    }
+
+    module.exports.encodeToSPFieldName = encodeToSPFieldName;
+    module.exports.decodeSPFieldName   = decodeSPFieldName;
+    module.exports.encodeFieldNames    = encodeFieldNames;
+
+    module.exports.isLetter     = isLetter;
+    module.exports.executeQuery = executeQuery;
+
+    module.exports.version = {
+      SP2010: function () {
+        return SP2010;
+      },
+      SP2013: function () {
+        return SP2013;
+      }
+    };
+
+  });
+
+define('nori/service/rest',
+  function (require, module, exports) {
+
+    /**
+     * Ajax requst using Promises
+     * @param reqObj
+     * @param success
+     * @param error
+     */
+    function request(reqObj) {
+      var xhr    = new XMLHttpRequest(),
+          json   = reqObj.json || false,
+          method = reqObj.method.toUpperCase() || 'GET',
+          url    = reqObj.url,
+          data   = reqObj.data || null;
+
+      return new Promise(function (resolve, reject) {
+        xhr.open(method, url, true, reqObj.user, reqObj.password);
+
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                if (json) {
+                  resolve(JSON.parse(xhr.responseText));
+                } else {
+                  resolve(xhr.responseText);
+                }
+              }
+              catch (e) {
+                handleError('Result', 'Error parsing JSON result');
+              }
+            } else {
+              handleError(xhr.status, xhr.statusText);
+            }
+          }
+        };
+
+        xhr.onerror   = function () {
+          return handleError('Network error');
+        };
+        xhr.ontimeout = function () {
+          return handleError('Timeout');
+        };
+        xhr.onabort   = function () {
+          return handleError('About');
+        };
+
+        // set non json header? 'application/x-www-form-urlencoded; charset=UTF-8'
+        if (json && method !== "GET") {
+          xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        } else if (json && method === "GET") {
+          xhr.setRequestHeader("Accept", "application/json, text/*; odata=verbose");  // odata param for Sharepoint
+        }
+
+        xhr.send(data);
+
+        function handleError(type, message) {
+          message = message || '';
+          reject(type + ' ' + message);
+        }
+      });
+
+    }
+
+    module.exports.request   = request;
+
+  });
+
 var APP = {};
 
 APP = (function () {
