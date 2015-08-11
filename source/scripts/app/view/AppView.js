@@ -2,43 +2,43 @@ APP.createNameSpace('APP.AppView');
 
 APP.AppView = (function () {
   var _self,
-    _appGlobals,
-    _currentViewPortSize,
-    _currentViewPortScroll,
-    _mainScrollEl,
-    _mainSearchInputEl,
-    _searchHeaderEl,
-    _clearAllButtonEl,
-    _appContainerEl,
-    _appEl,
-    _drawerEl,
-    _mainHeaderEl,
-    _mainFooterEl,
-    _drawerToggleButtonEl,
-    _uiUpdateLayoutStream,
-    _searchInputStream,
-    _clearAllButtonStream,
-    _browserScrollStream,
-    _browserResizeStream,
-    _isScrollingTimerStream,
-    _drawerToggleButtonStream,
-    _isMobile,
-    _tabletBreakWidth,
-    _phoneBreakWidth,
-    _drawerWidth,
-    _isDrawerOpen,
-    _eventDispatcher = require('nudoru.events.EventDispatcher'),
-    _headerMenuView = requireUnique('nudoru.components.DDMenuBarView'),
-    _drawerMenuView = requireUnique('nudoru.components.DDMenuBarView'),
-    _toastView = require('nudoru.components.ToastView'),
-    _modalCoverView = require('nudoru.components.ModalCoverView'),
-    _tagBarView = require('APP.AppView.TagBarView'),
-    _itemGridView = require('APP.AppView.GridCollectionView'),
-    _itemDetailView = require('APP.AppView.ItemDetailView'),
-    _browserEvents = require('nudoru.events.BrowserEvents'),
-    _componentEvents = require('nudoru.events.ComponentEvents'),
-    _stringUtils = require('nudoru.utils.StringUtils'),
-    _browserInfo = require('nudoru.utils.BrowserInfo');
+      _appGlobals,
+      _currentViewPortSize,
+      _currentViewPortScroll,
+      _mainScrollEl,
+      _mainSearchInputEl,
+      _searchHeaderEl,
+      _clearAllButtonEl,
+      _appContainerEl,
+      _appEl,
+      _drawerEl,
+      _mainHeaderEl,
+      _mainFooterEl,
+      _drawerToggleButtonEl,
+      _uiUpdateLayoutStream,
+      _searchInputStream,
+      _clearAllButtonStream,
+      _browserScrollStream,
+      _browserResizeStream,
+      _isScrollingTimerStream,
+      _drawerToggleButtonStream,
+      _isMobile,
+      _tabletBreakWidth,
+      _phoneBreakWidth,
+      _drawerWidth,
+      _isDrawerOpen,
+      _eventDispatcher = require('nudoru.events.EventDispatcher'),
+      _headerMenuView  = requireUnique('nudoru.components.DDMenuBarView'),
+      _drawerMenuView  = requireUnique('nudoru.components.DDMenuBarView'),
+      _toastView       = require('nudoru.components.ToastView'),
+      _modalCoverView  = require('nudoru.components.ModalCoverView'),
+      _tagBarView      = require('APP.AppView.TagBarView'),
+      _itemGridView    = require('APP.AppView.GridCollectionView'),
+      _itemDetailView  = require('APP.AppView.ItemDetailView'),
+      _browserEvents   = require('nudoru.events.BrowserEvents'),
+      _componentEvents = require('nudoru.events.ComponentEvents'),
+      _stringUtils     = require('nudoru.utils.StringUtils'),
+      _browserInfo     = require('nudoru.utils.BrowserInfo');
 
   //----------------------------------------------------------------------------
   //  Accessors
@@ -53,14 +53,14 @@ APP.AppView = (function () {
   //----------------------------------------------------------------------------
 
   function initialize() {
-    _self = this;
+    _self       = this;
     _appGlobals = APP.globals();
 
-    _isMobile = false;
+    _isMobile         = false;
     _tabletBreakWidth = 750;
-    _phoneBreakWidth = 475;
-    _drawerWidth = 250;
-    _isDrawerOpen = false;
+    _phoneBreakWidth  = 475;
+    _drawerWidth      = 250;
+    _isDrawerOpen     = false;
 
     _eventDispatcher.publish(APP.AppEvents.VIEW_INITIALIZED);
   }
@@ -83,7 +83,7 @@ APP.AppView = (function () {
   }
 
   function updateAppTitle() {
-    var apptitle = _mainHeaderEl.querySelector('h1');
+    var apptitle       = _mainHeaderEl.querySelector('h1');
     apptitle.innerHTML = _appGlobals.appConfig.title;
 
     document.title = _stringUtils.removeTags(_appGlobals.appConfig.title);
@@ -92,11 +92,11 @@ APP.AppView = (function () {
   function defineDOMElements() {
     // ui parts
     _appContainerEl = document.getElementById('app__container');
-    _appEl = document.getElementById('app__contents');
+    _appEl          = document.getElementById('app__contents');
 
     // listen for scroll on the app container not window or body
-    _mainScrollEl = _appEl;
-    _drawerEl = document.getElementById('drawer');
+    _mainScrollEl         = _appEl;
+    _drawerEl             = document.getElementById('drawer');
     _drawerToggleButtonEl = document.querySelector('.drawer__menu-spinner-button > input');
 
     _mainHeaderEl = document.getElementById('header');
@@ -104,8 +104,8 @@ APP.AppView = (function () {
 
     // item grid header
     _mainSearchInputEl = document.querySelector('.grid__header-search > input');
-    _searchHeaderEl = document.querySelector('.grid__header > h1');
-    _clearAllButtonEl = document.getElementById('clearall-button');
+    _searchHeaderEl    = document.querySelector('.grid__header > h1');
+    _clearAllButtonEl  = document.getElementById('clearall-button');
   }
 
   function initializeViewComponents() {
@@ -126,7 +126,7 @@ APP.AppView = (function () {
 
   function configureUIStreams() {
     var uiresizestream = Rx.Observable.fromEvent(window, 'resize'),
-      uiscrollscream = Rx.Observable.fromEvent(_mainScrollEl, 'scroll');
+        uiscrollscream = Rx.Observable.fromEvent(_mainScrollEl, 'scroll');
 
     _uiUpdateLayoutStream = Rx.Observable.merge(uiresizestream, uiscrollscream)
       .subscribe(function () {
@@ -184,7 +184,7 @@ APP.AppView = (function () {
    */
   function setCurrentViewPortSize() {
     _currentViewPortSize = {
-      width: window.innerWidth,
+      width : window.innerWidth,
       height: window.innerHeight
     };
   }
@@ -194,10 +194,10 @@ APP.AppView = (function () {
    */
   function setCurrentViewPortScroll() {
     var left = _mainScrollEl.scrollLeft,
-      top = _mainScrollEl.scrollTop;
+        top  = _mainScrollEl.scrollTop;
 
     left = left ? left : 0;
-    top = top ? top : 0;
+    top  = top ? top : 0;
 
     _currentViewPortScroll = {left: left, top: top};
   }
@@ -209,7 +209,7 @@ APP.AppView = (function () {
     setCurrentViewPortScroll();
     setCurrentViewPortSize();
 
-    if(_isMobile) {
+    if (_isMobile) {
       startIsScrollingTimer();
       hideElementsOnScrollStart();
     } else {
@@ -237,7 +237,7 @@ APP.AppView = (function () {
    * Start a timer monitor when scrolling stops
    */
   function startIsScrollingTimer() {
-    if(_isScrollingTimerStream) {
+    if (_isScrollingTimerStream) {
       _isScrollingTimerStream.dispose();
     }
 
@@ -252,8 +252,8 @@ APP.AppView = (function () {
    * Hide UI elements
    */
   function hideElementsOnScrollStart() {
-    TweenLite.to(_mainHeaderEl, 0, {autoAlpha: 0, ease:Circ.easeOut});
-    TweenLite.to(_mainFooterEl, 0, {autoAlpha: 0, ease:Circ.easeOut});
+    TweenLite.to(_mainHeaderEl, 0, {autoAlpha: 0, ease: Circ.easeOut});
+    TweenLite.to(_mainFooterEl, 0, {autoAlpha: 0, ease: Circ.easeOut});
   }
 
   /**
@@ -262,8 +262,8 @@ APP.AppView = (function () {
   function showElementsOnScrollEnd() {
     positionUIElements();
 
-    TweenLite.to(_mainHeaderEl, 0.1, {autoAlpha: 1, ease:Circ.easeOut});
-    TweenLite.to(_mainFooterEl, 0.1, {autoAlpha: 1, ease:Circ.easeOut});
+    TweenLite.to(_mainHeaderEl, 0.1, {autoAlpha: 1, ease: Circ.easeOut});
+    TweenLite.to(_mainFooterEl, 0.1, {autoAlpha: 1, ease: Circ.easeOut});
   }
 
   //----------------------------------------------------------------------------
@@ -451,8 +451,8 @@ APP.AppView = (function () {
   }
 
   function removeLoadingMessage() {
-    var cover = document.getElementById('initialization__cover'),
-      message = document.getElementsByClassName('initialization__message')[0];
+    var cover   = document.getElementById('initialization__cover'),
+        message = document.getElementsByClassName('initialization__message')[0];
 
     TweenLite.to(cover, 1, {
       alpha: 0, ease: Quad.easeOut, onComplete: function () {
@@ -472,26 +472,26 @@ APP.AppView = (function () {
   //----------------------------------------------------------------------------
 
   return {
-    initialize: initialize,
-    render: render,
-    showNotification: showNotification,
-    removeLoadingMessage: removeLoadingMessage,
-    getMainScrollingView: getMainScrollingView,
-    updateSearchHeader: updateSearchHeader,
-    showBigMessage: showBigMessage,
-    initializeMenus: initializeMenus,
-    initializeGridView: initializeGridCollectionView,
-    showItemDetailView: showItemDetailView,
-    hideItemDetailView: hideItemDetailView,
-    clearAllFilters: clearAllFilters,
-    clearFreeTextFilter: clearFreeTextFilter,
-    setFreeTextFilterValue: setFreeTextFilterValue,
-    showAllGridViewItems: showAllGridViewItems,
-    updateGridItemVisibility: updateGridItemVisibility,
-    updateTagBarDisplay: updateTagBarDisplay,
-    updateMenuSelections: updateMenuSelections,
+    initialize                : initialize,
+    render                    : render,
+    showNotification          : showNotification,
+    removeLoadingMessage      : removeLoadingMessage,
+    getMainScrollingView      : getMainScrollingView,
+    updateSearchHeader        : updateSearchHeader,
+    showBigMessage            : showBigMessage,
+    initializeMenus           : initializeMenus,
+    initializeGridView        : initializeGridCollectionView,
+    showItemDetailView        : showItemDetailView,
+    hideItemDetailView        : hideItemDetailView,
+    clearAllFilters           : clearAllFilters,
+    clearFreeTextFilter       : clearFreeTextFilter,
+    setFreeTextFilterValue    : setFreeTextFilterValue,
+    showAllGridViewItems      : showAllGridViewItems,
+    updateGridItemVisibility  : updateGridItemVisibility,
+    updateTagBarDisplay       : updateTagBarDisplay,
+    updateMenuSelections      : updateMenuSelections,
     updateHeaderMenuSelections: updateHeaderMenuSelections,
     updateDrawerMenuSelections: updateDrawerMenuSelections,
-    updateUIOnFilterChanges: updateUIOnFilterChanges
+    updateUIOnFilterChanges   : updateUIOnFilterChanges
   };
 }());
