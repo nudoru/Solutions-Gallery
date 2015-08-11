@@ -18,6 +18,7 @@ module.exports = function (grunt) {
           '!jade',
           '!jade/templates.html',
           '!scripts/app/**/*.js',
+          '!scripts/nori/**/*.js',
           '!scripts/nudoru/**/*.js',
           '!scripts/vendor/**/*.js',
           '!scripts/vendor/**/*.map',
@@ -77,14 +78,9 @@ module.exports = function (grunt) {
     concat: {
       options: {
         stripBanners: true,
+        //banner: '"use strict";\n', // Breaks RxJS
         sourceMap: true,
-        separator: ';'
-        //banner: "'use strict';\n",
-        //banner: "(function () {'use strict';}());\n",
-        //process: function(src, filepath) {
-        //  return '// Source: ' + filepath + '\n' +
-        //    src.replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
-        //}
+        separator: '\n\n'
       },
       dist: {
         src: [
@@ -118,7 +114,7 @@ module.exports = function (grunt) {
           'source/scripts/nudoru/components/DDMenuView.js',
           'source/scripts/nudoru/components/BasicMenuItemView.js',
 
-          'source/scripts/nudoru/utils/Elemental.js',
+          'source/nori/**/*.js',
 
           'source/scripts/app/App.js',
           'source/scripts/app/events/AppEvents.js',
