@@ -3611,6 +3611,12 @@ http://codepen.io/HugoGiraudel/pen/qBgoh
   background-color: #fff;
   text-shadow: none;
 }
+#header img {
+  position: relative;
+  float: left;
+  top: 20px;
+  margin-right: 0.688rem;
+}
 #header h1 {
   float: left;
   margin: 0;
@@ -3618,12 +3624,11 @@ http://codepen.io/HugoGiraudel/pen/qBgoh
   height: 75px;
   line-height: 75px;
   color: #00a9e0;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   letter-spacing: -0.025em;
 }
 #header h1 em {
   color: #005eb8;
-  margin-right: 0.688rem;
   font-style: normal;
   font-weight: 400;
 }
@@ -3633,6 +3638,9 @@ http://codepen.io/HugoGiraudel/pen/qBgoh
     height: 49.95px;
     background-color: #005eb8;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.35);
+  }
+  #header img {
+    display: none;
   }
   #header h1 {
     display: block;
